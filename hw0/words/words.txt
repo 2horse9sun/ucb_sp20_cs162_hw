@@ -1,1 +1,2 @@
-This program reads an existing file called myfile.txt character by character and uses the n variable to count how many
+abc def AaA
+bbb zzz aaa

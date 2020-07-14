@@ -35,17 +35,56 @@ void init_words(WordCount **wclist) {
 
 size_t len_words(WordCount *wchead) {
     size_t len = 0;
+    WordCount *wc_ptr = wchead;
+    while(wc_ptr != NULL){
+      wc_ptr = wc_ptr->next;
+      len++;
+    }
     return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
   WordCount *wc = NULL;
+  WordCount *wc_ptr = wchead;
+  while(wc_ptr != NULL){
+    if(strcmp(wc_ptr->word, word) == 0){
+      wc = wc_ptr;
+      break;
+    }
+    wc_ptr = wc_ptr->next;
+  }
   return wc;
 }
 
 void add_word(WordCount **wclist, char *word) {
   /* If word is present in word_counts list, increment the count, otw insert with count 1. */
+  if(*wclist == NULL){
+    *wclist = (WordCount*) malloc(sizeof(WordCount));
+    (*wclist)->word = word;
+    (*wclist)->count = 1;
+    (*wclist)->next = NULL;
+    return;
+  }
+  WordCount *target_ptr = find_word(*wclist, word);
+  if(target_ptr != NULL){
+    target_ptr->count++;
+  }else{// insert linknode at tail
+    WordCount *dummy_ptr = (WordCount*) malloc(sizeof(WordCount));
+    dummy_ptr->word = NULL;
+    dummy_ptr->count = 0;
+    dummy_ptr->next = NULL;
+    dummy_ptr->next = *wclist;
+    WordCount *wc_ptr = dummy_ptr;
+    while(wc_ptr->next != NULL){
+      wc_ptr = wc_ptr->next;
+    }
+    WordCount *target_ptr = (WordCount*) malloc(sizeof(WordCount));
+    target_ptr->word = word;
+    target_ptr->count = 1;
+    target_ptr->next = NULL;
+    wc_ptr->next = target_ptr;
+  }
 }
 
 void fprint_words(WordCount *wchead, FILE *ofile) {
