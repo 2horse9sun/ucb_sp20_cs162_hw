@@ -47,6 +47,39 @@ WordCount *word_counts = NULL;
 int num_words(FILE* infile) {
   int num_words = 0;
 
+  int c;
+  bool check = false;
+  bool is_word = false;
+  bool gt_one = false;
+  int SPACE = ' ';
+  int CR = '\n';
+  int LF = '\r';
+  do {
+      c = fgetc(infile);
+
+      if(isalpha(c)){// if c is alpha
+        if(!check){
+          check = true;
+          is_word = true;
+        }else if(is_word){
+          gt_one = true;
+        }
+      }else if(c == SPACE || c == CR || c == LF || c == EOF){// when a sequence is over
+        if(check && is_word && gt_one){
+          num_words++;
+        }
+        check = false;
+        is_word = false;
+        gt_one = false;
+      }else{// c is other type
+        if(!check){
+          check = true;
+        }
+        is_word = false;
+        gt_one = false;
+      }
+    } while (c != EOF);
+
   return num_words;
 }
 
@@ -124,13 +157,21 @@ int main (int argc, char *argv[]) {
   /* Create the empty data structure */
   init_words(&word_counts);
 
+
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
+    total_words = num_words(infile);
   } else {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
+    for(int i = optind;i < argc;++i){
+      infile = fopen(argv[i], "r");
+      if(infile == NULL) perror ("Error opening file");
+      total_words += num_words(infile);
+      fclose(infile);
+    }
   }
 
   if (count_mode) {
@@ -142,4 +183,4 @@ int main (int argc, char *argv[]) {
     fprint_words(word_counts, stdout);
 }
   return 0;
-}
+  }
