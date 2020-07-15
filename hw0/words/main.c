@@ -38,6 +38,8 @@ WordCount *word_counts = NULL;
 /* The maximum length of each word in a file */
 #define MAX_WORD_LEN 64
 
+bool too_long = false;
+
 /*
  * 3.1.1 Total Word Count
  *
@@ -54,6 +56,7 @@ int num_words(FILE* infile) {
   int SPACE = ' ';
   int CR = '\n';
   int LF = '\r';
+  int i = 0;
   do {
       c = fgetc(infile);
 
@@ -61,12 +64,15 @@ int num_words(FILE* infile) {
         if(!check){
           check = true;
           is_word = true;
+          i++;
         }else if(is_word){
           gt_one = true;
+          i++;
         }
       }else if(c == SPACE || c == CR || c == LF || c == EOF){// when a sequence is over
         if(check && is_word && gt_one){
           num_words++;
+          i = 0;
         }
         check = false;
         is_word = false;
@@ -74,12 +80,18 @@ int num_words(FILE* infile) {
       }else{// c is other type
         if(!check){
           check = true;
+          i = 0;
         }
         is_word = false;
         gt_one = false;
+        i = 0;
       }
+      if(i > MAX_WORD_LEN){
+      	too_long = true;
+      	printf("%s\n", "WORD LEN > MAX_WORD_LEN !");
+      	break;
+      } 
     } while (c != EOF);
-
   return num_words;
 }
 
@@ -137,6 +149,12 @@ void count_words(WordCount **wclist, FILE *infile) {
         buffer[0] = '\0';
         i = 0;
       }
+
+      if(i > MAX_WORD_LEN){
+      	too_long = true;
+      	printf("%s\n", "WORD LEN > MAX_WORD_LEN !");
+      	break;
+      } 
     } while (c != EOF);
 }
 
@@ -227,12 +245,13 @@ int main (int argc, char *argv[]) {
   }
 
   if (count_mode) {
-    printf("The total number of words is: %i\n", total_words);
+    if(!too_long) printf("The total number of words is: %i\n", total_words);
   } else {
-    wordcount_sort(&word_counts, wordcount_less);
-
-    printf("The frequencies of each word are: \n");
-    fprint_words(word_counts, stdout);
+  	if(!too_long){
+  		wordcount_sort(&word_counts, wordcount_less);
+    	printf("The frequencies of each word are: \n");
+    	fprint_words(word_counts, stdout);
+  	}
 }
   return 0;
   }
