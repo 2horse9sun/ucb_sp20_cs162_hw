@@ -1,63 +1,115 @@
 GDB Practice:
 
-a.
+a. 
+gdb map
 
-b.
 
-c.
+b. 
+b 16
 
-d.
+c. 
+r
 
-    *
+d. 
+print argv
 
-e.
+e. 
+print &argv
 
-    *
+f. 
+b 23
+c
 
-f.
+g. 
+print &recur
 
-g.
+h. 
+s
 
-    *
+i. 
+n
+n
 
-h.
+j. 
+disassemble
 
-i.
+k. 
+stepi 5
 
-j.
+l.  info registers
+	rax            0x2      2
+	rbx            0x0      0
+	rcx            0x0      0
+	rdx            0x0      0
+	rsi            0x555555756340   93824994337600
+	rdi            0x2      2
+	rbp            0x7fffffffe3c0   0x7fffffffe3c0
+	rsp            0x7fffffffe3a0   0x7fffffffe3a0
+	r8             0x0      0
+	r9             0x0      0
+	r10            0x555555756010   93824994336784
+	r11            0x246    582
+	r12            0x555555554580   93824992232832
+	r13            0x7fffffffe4e0   140737488348384
+	r14            0x0      0
+	r15            0x0      0
+	rip            0x555555554702   0x555555554702 <recur+53>
+	eflags         0x202    [ IF ]
+	cs             0x33     51
+	ss             0x2b     43
+	ds             0x0      0
+	es             0x0      0
+	fs             0x0      0
+	gs             0x0      0
 
-k.
 
-l.
-
-    *
-
-m.
+m. 
+stepi
+stepi
+stepi
+stepi
+stepi
+stepi
 
 n.
+list
 
-o.
+o.  
+backtrace
 
-p.
+p. 
+b recurse.c:3 if (i==0)
 
-q.
+q. 
+c
 
-r.
+r.  
+backtrace
 
-s.
 
-t.
+s. 1
 
-u.
+t. 
+n 
+n 
+n
 
-v.
+u. 
+disassemble
 
-    *
+v. 
+0x000055555555470f <+66>:    retq
 
-w.
+w. 
+list
 
-x.
+x. 
+finish 
+finish 
+finish
 
-y.
+y. 
+c
 
-z.
+z. 
+q
