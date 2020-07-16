@@ -1,17 +1,22 @@
 1.
 call	recur
+
 2.
 .text code
 .data global/static variables
+
 3.
 objdump -t map.obj
+
 4
 g: global
 O: variable
 F: function
 *UND*: external link
+
 5.
 objdump -t recurse.obj
+
 6.
 objdump -t recurse.obj
 
@@ -34,6 +39,7 @@ SYMBOL TABLE:
 00000000         *UND*  00000000 printf
 7.
 Every symbol gets its own address
+
 8.
 
 9.
