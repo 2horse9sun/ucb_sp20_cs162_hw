@@ -60,7 +60,7 @@ static size_t get_word(char **word, FILE *infile) {
     if (index == buffer_cap) {
       char *new_buffer;
       buffer_cap *= 2;
-      if ((new_buffer = realloc(buffer, buffer_cap)) == NULL) {
+      if ((new_buffer = realloc(buffer, buffer_cap * sizeof(char))) == NULL) {
         perror("realloc");
         free(buffer);
         return 0;
