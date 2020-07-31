@@ -32,6 +32,28 @@
 #include "word_count.h"
 #include "word_helpers.h"
 
+typedef struct thread_word_args
+{
+  word_count_list_t* word_counts;
+  char* filename;
+} targs_t;
+
+
+void *threadfun(void *arg) {
+  targs_t* targs = (targs_t*)arg;
+  FILE *infile = fopen(targs->filename, "r");
+  if (infile == NULL) {
+    perror("fopen");
+    pthread_exit(NULL);
+  }
+  // pthread_mutex_lock(&targs->word_counts->lock);
+  count_words(targs->word_counts, infile);
+  // pthread_mutex_unlock(&targs->word_counts->lock);
+  fclose(infile);
+  pthread_exit(NULL);
+}
+
+
 /*
  * main - handle command line, spawning one thread per file.
  */
@@ -45,10 +67,26 @@ int main(int argc, char *argv[]) {
     count_words(&word_counts, stdin);
   } else {
     /* TODO */
+    int rc;
+    int nthreads = argc - 1;
+    pthread_t threads[nthreads];
+    for(int t = 0; t < nthreads; t++) {
+      targs_t* targs = (targs_t *) malloc(sizeof(targs_t));
+      targs->filename = argv[t+1];
+      targs->word_counts = &word_counts;
+      rc = pthread_create(&threads[t], NULL, threadfun, (void *)targs);
+      if (rc) {
+        printf("ERROR; return code from pthread_create() is %d\n", rc);
+        exit(-1);
+      }
+    }
+    for(int t = 0; t < nthreads; t++) {
+      pthread_join(threads[t], NULL);
+    }
   }
 
   /* Output final result of all threads' work. */
   wordcount_sort(&word_counts, less_count);
   fprint_words(&word_counts, stdout);
-  return 0;
+  pthread_exit(NULL);
 }
