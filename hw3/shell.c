@@ -111,6 +111,15 @@ void init_shell() {
   }
 }
 
+int isFileExistsAccess(const char *path)
+{
+    // Check for file existence
+    if (access(path, F_OK) == -1)
+        return 0;
+
+    return 1;
+}
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
@@ -144,7 +153,46 @@ int main(unused int argc, unused char *argv[]) {
 	    		args[i] = tokens_get_token(tokens, i);
 	    	}
 	    	args[len] = NULL;
-	    	execv(path, args);
+
+	    	bool is_full_path = false;
+	    	for(int i = 0;i < sizeof(path)/sizeof(char);i++){
+	    		if(path[i] == '/'){
+	    			is_full_path = true;
+	    			break;
+	    		}
+	    	}
+
+	    	if(!is_full_path){
+	    		char *envs_tmp = getenv("PATH");
+	    		char envs[999];
+	    		strcpy(envs, envs_tmp);
+	    		for(int i = 0;i < sizeof(envs)/sizeof(char);i++){
+		    		if(envs[i] == ':'){
+		    			envs[i] = ' ';
+		    		}
+	    		}
+	    		struct tokens* path_tokens = tokenize(envs);
+	    		int path_len = tokens_get_length(path_tokens);
+	    		bool find = false;
+	    		for(int i = 0;i < path_len && !find;i++){
+	    			char *dir = tokens_get_token(path_tokens, i);
+	    			char slash[] = {'/', '\0'};
+	    			char *possible_path =strcat(dir, strcat(slash, path));
+	    			if(isFileExistsAccess(possible_path)){
+	    				find = true;
+	    				path = possible_path;
+	    				execv(path, args);
+	    			}
+	    		}
+	    		if(!find){
+	    			printf("%s\n", "cmd not exist");
+	    			exit(1);
+	    		} 
+	    	}else{
+	    		execv(path, args);
+	    	}
+	    	
+	    	
 	    }
     }
 
