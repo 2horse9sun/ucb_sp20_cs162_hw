@@ -120,6 +120,152 @@ int isFileExistsAccess(const char *path)
     return 1;
 }
 
+
+
+
+void execute(char *line){
+	// get args and path
+	struct tokens *tokens = tokenize(line);
+	unused char *path = tokens_get_token(tokens, 0);
+	int len = tokens_get_length(tokens);
+	unused char *args[len + 1];
+	for(int i = 0;i < len;i++){
+		args[i] = tokens_get_token(tokens, i);
+	}
+	args[len] = NULL;
+
+	bool is_full_path = false;
+	for(int i = 0;i < sizeof(path)/sizeof(char);i++){
+		if(path[i] == '/'){
+			is_full_path = true;
+			break;
+		}
+	}
+	if(!is_full_path){
+		char *envs_tmp = getenv("PATH");
+		char envs[999];
+		strcpy(envs, envs_tmp);
+		for(int i = 0;i < sizeof(envs)/sizeof(char);i++){
+    		if(envs[i] == ':'){
+    			envs[i] = ' ';
+    		}
+		}
+		struct tokens* path_tokens = tokenize(envs);
+		int path_len = tokens_get_length(path_tokens);
+		bool find = false;
+		for(int i = 0;i < path_len && !find;i++){
+			char *dir = tokens_get_token(path_tokens, i);
+			char slash[] = {'/', '\0'};
+			char *possible_path =strcat(dir, strcat(slash, path));
+			if(isFileExistsAccess(possible_path)){
+				find = true;
+				path = possible_path;
+			}
+		}
+		if(!find){
+			printf("%s\n", "cmd not exist");
+			exit(1);
+		} 
+	}
+
+
+	
+
+
+
+
+	// function for redirection ( '<' , '>' )
+    int in=0, out=0;
+    char input[64], output[64];
+    // finds where '<' or '>' occurs and make that argv[i] = NULL , to ensure that command wont't read that
+    for(int i = 0;args[i] != NULL;i++)
+    {
+        if(strcmp(args[i],"<") == 0)
+        {        
+            args[i]=NULL;
+            strcpy(input,args[i+1]);
+            // args[i+1]=NULL;
+            in=2;           
+        }               
+
+        if(strcmp(args[i],">") == 0)
+        {      
+            args[i]=NULL;
+            strcpy(output,args[i+1]);
+            // args[i+1]=NULL;
+            out=2;
+        }         
+    }
+    //if '<' char was found in string inputted by user
+    if(in)
+    {   
+        // fdo is file-descriptor
+        int fd0;
+        if ((fd0 = open(input, O_RDONLY, 0)) < 0) {
+            perror("Couldn't open input file");
+            exit(0);
+        }           
+        // dup2() copies content of fdo in input of preceeding file
+        dup2(fd0, STDIN_FILENO); // STDIN_FILENO here can be replaced by 0 
+
+        close(fd0); // necessary
+    }
+    //if '>' char was found in string inputted by user 
+    if (out)
+    {
+        int fd1 ;
+        if ((fd1 = creat(output , 0644)) < 0) {
+            perror("Couldn't open the output file");
+            exit(0);
+        }           
+
+        dup2(fd1, STDOUT_FILENO); // 1 here can be replaced by STDOUT_FILENO
+        close(fd1);
+    }
+	execv(path, args);
+}
+
+
+void executePrograms(char *line){
+	int i = 0;
+	int sep = 0;
+	while(line[i] != '\0'){
+		if(line[i] == '|'){
+			sep = i;
+			break;
+		}
+		i++;
+	}
+
+	if(sep == 0){
+		execute(line);
+	}else{
+		char before[4096];
+		char after[4096];
+		strncpy(before, line, sep-1);
+		before[sep-1] = '\0';
+		strcpy(after, line+i+2);
+
+		int pipefd[2];
+		pid_t p1;
+		if(pipe(pipefd) < 0) perror("pipe fail");
+		p1 = fork();
+		if(p1 < 0) perror("fork fail");
+		if(p1){
+			close(pipefd[1]);
+			dup2(pipefd[0], STDIN_FILENO);
+			executePrograms(after);
+		}else{
+			close(pipefd[0]);
+			dup2(pipefd[1], STDOUT_FILENO);
+			execute(before);
+		}
+
+
+	}
+}
+
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
@@ -140,58 +286,32 @@ int main(unused int argc, unused char *argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
+
+
+    	
       /* REPLACE this to run commands as programs. */
     	int wstatus;
 	    pid_t pid = fork();
 	    if(pid){
 	    	wait(&wstatus);
 	    }else{
-	    	unused char *path = tokens_get_token(tokens, 0);
-	    	int len = tokens_get_length(tokens);
-	    	unused char *args[len + 1];
-	    	for(int i = 0;i < len;i++){
-	    		args[i] = tokens_get_token(tokens, i);
-	    	}
-	    	args[len] = NULL;
-
-	    	bool is_full_path = false;
-	    	for(int i = 0;i < sizeof(path)/sizeof(char);i++){
-	    		if(path[i] == '/'){
-	    			is_full_path = true;
-	    			break;
-	    		}
-	    	}
-
-	    	if(!is_full_path){
-	    		char *envs_tmp = getenv("PATH");
-	    		char envs[999];
-	    		strcpy(envs, envs_tmp);
-	    		for(int i = 0;i < sizeof(envs)/sizeof(char);i++){
-		    		if(envs[i] == ':'){
-		    			envs[i] = ' ';
-		    		}
-	    		}
-	    		struct tokens* path_tokens = tokenize(envs);
-	    		int path_len = tokens_get_length(path_tokens);
-	    		bool find = false;
-	    		for(int i = 0;i < path_len && !find;i++){
-	    			char *dir = tokens_get_token(path_tokens, i);
-	    			char slash[] = {'/', '\0'};
-	    			char *possible_path =strcat(dir, strcat(slash, path));
-	    			if(isFileExistsAccess(possible_path)){
-	    				find = true;
-	    				path = possible_path;
-	    				execv(path, args);
-	    			}
-	    		}
-	    		if(!find){
-	    			printf("%s\n", "cmd not exist");
-	    			exit(1);
-	    		} 
-	    	}else{
-	    		execv(path, args);
-	    	}
+	    	// find pipes
+	    	// char *strpiped[20];
+	    	// for (int i = 0; i < 2; i++) { 
+		    //     strpiped[i] = strsep(&line, "|"); 
+		    //     printf("%s\n", strpiped[i]);
+		    //     if (strpiped[i] == NULL) 
+		    //         break; 
+		    // } 
+		    // if(strpiped[1] == NULL){
+		    // 	executeProgram(line);
+		    // }
+		    executePrograms(line);
 	    	
+
+
+	    	
+
 	    	
 	    }
     }
