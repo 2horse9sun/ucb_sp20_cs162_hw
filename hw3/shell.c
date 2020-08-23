@@ -124,6 +124,18 @@ int isFileExistsAccess(const char *path)
 
 
 void execute(char *line){
+
+	setpgid(getpid(), getpid());
+    tcsetpgrp(0, getpid());
+    signal(SIGINT, SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+    signal(SIGTSTP, SIG_DFL);
+    signal(SIGCONT, SIG_DFL);
+    signal(SIGTTIN, SIG_DFL);
+    signal(SIGTTOU, SIG_DFL);
+
+    printf("cat pid: %d, cat pgid: %d cat foreground pgid: %d\n", getpid(), getpgid(getpid()), tcgetpgrp(0));
+
 	// get args and path
 	struct tokens *tokens = tokenize(line);
 	unused char *path = tokens_get_token(tokens, 0);
@@ -269,6 +281,18 @@ void executePrograms(char *line){
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
+  setpgid(getpid(), getpid());
+  tcsetpgrp(0, getpid());
+
+  signal(SIGINT, SIG_IGN);
+  signal(SIGQUIT, SIG_IGN);
+  signal(SIGTSTP, SIG_IGN);
+  signal(SIGCONT, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+  signal(SIGTTOU, SIG_IGN);
+
+  printf("shell pid: %d, shell pgid: %d shell foreground pgid: %d\n", getpid(), getpgid(getpid()), tcgetpgrp(0));
+
   static char line[4096];
   int line_num = 0;
 
@@ -292,27 +316,13 @@ int main(unused int argc, unused char *argv[]) {
       /* REPLACE this to run commands as programs. */
     	int wstatus;
 	    pid_t pid = fork();
+      
 	    if(pid){
 	    	wait(&wstatus);
+	        
 	    }else{
-	    	// find pipes
-	    	// char *strpiped[20];
-	    	// for (int i = 0; i < 2; i++) { 
-		    //     strpiped[i] = strsep(&line, "|"); 
-		    //     printf("%s\n", strpiped[i]);
-		    //     if (strpiped[i] == NULL) 
-		    //         break; 
-		    // } 
-		    // if(strpiped[1] == NULL){
-		    // 	executeProgram(line);
-		    // }
+
 		    executePrograms(line);
-	    	
-
-
-	    	
-
-	    	
 	    }
     }
 
@@ -322,6 +332,20 @@ int main(unused int argc, unused char *argv[]) {
 
     /* Clean up memory */
     tokens_destroy(tokens);
+
+
+    // setpgid(getpid(), getpid());
+    tcsetpgrp(0, getpid());
+    signal(SIGINT, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);
+    signal(SIGCONT, SIG_IGN);
+    signal(SIGTTIN, SIG_IGN);
+    signal(SIGTTOU, SIG_IGN);
+
+     printf("shell pid: %d, shell pgid: %d shell foreground pgid: %d\n", getpid(), getpgid(getpid()), tcgetpgrp(0));
+
+
   }
 
   return 0;
